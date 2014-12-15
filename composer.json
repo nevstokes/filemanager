@@ -1,0 +1,8 @@
+{
+	"name": "nevstokes/filemanager",
+	"require": {
+		"monolog/monolog": "~1.11",
+		"symfony/filesystem": "~2.6",
+		"symfony/finder": "~2.6"
+	}
+}
