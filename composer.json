@@ -1,5 +1,8 @@
 {
 	"name": "nevstokes/filemanager",
+	"description": "File release management",
+	"version": "0.1.0",
+	"license": "MIT",
 	"require": {
 		"monolog/monolog": "~1.11",
 		"symfony/event-dispatcher": "~2.6",
