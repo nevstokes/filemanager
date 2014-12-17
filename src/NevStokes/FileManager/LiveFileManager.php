@@ -46,6 +46,16 @@ class LiveFileManager implements FileManagerInterface
 	}
 
 	/**
+	 * [mtime description]
+	 * @param  [type] $file [description]
+	 * @return [type]       [description]
+	 */
+	public function mtime($file)
+	{
+		return filemtime($this->get($file));
+	}
+
+	/**
 	 * [get description]
 	 * @param  string $file The file for which to determine the path
 	 * @return string       [description]

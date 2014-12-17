@@ -9,6 +9,8 @@ namespace NevStokes\FileManager;
 use NevStokes\Utilities\Logging\Notifier;
 use NevStokes\Utilities\Logging\LogMessage;
 
+use Symfony\Component\EventDispatcher\EventDispatcher;
+
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 

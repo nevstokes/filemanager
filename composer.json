@@ -2,6 +2,7 @@
 	"name": "nevstokes/filemanager",
 	"require": {
 		"monolog/monolog": "~1.11",
+		"symfony/event-dispatcher": "~2.6",
 		"symfony/filesystem": "~2.6",
 		"symfony/finder": "~2.6"
 	}
