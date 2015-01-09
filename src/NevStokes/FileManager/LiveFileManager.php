@@ -1,7 +1,7 @@
 <?php
 
 /**
- *
+ * @author Nev Stokes <mail@nevstokes.com>
  */
 
 namespace NevStokes\FileManager;
@@ -28,15 +28,29 @@ class LiveFileManager implements FileManagerInterface
 	 */
 	public function __construct($dir = self::BASEDIR)
 	{
-		if (!is_dir($dir)) {
+		$dir = rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
+		// Check the directory
+		if (!is_dir($dir) && is_readable($dir)) {
 			throw new \RuntimeException($dir . ' is not a directory');
 		}
 
-		$this->_dir = rtrim($dir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+		$this->_dir = $dir;
 	}
 
 	/**
-	 * [get_contents description]
+	 * Allow multiple domains to be served from the same release folder
+	 * @param bool $enable
+	 */
+	public function setDomainedReleases($enable = true)
+	{
+		// Append the current domain to the given release directory
+		// $this->_dir .= $_SERVER['SERVER_NAME'] . DIRECTORY_SEPARATOR;
+		$this->_dir .= 'localhost' . DIRECTORY_SEPARATOR;
+	}
+
+	/**
+	 * Returns the contents of the file
 	 * @param  string $file The file for which to get contents
 	 * @return mixed       The contents of the file
 	 */
@@ -46,7 +60,7 @@ class LiveFileManager implements FileManagerInterface
 	}
 
 	/**
-	 * [mtime description]
+	 * Returns the last modified date of the file
 	 * @param  [type] $file [description]
 	 * @return [type]       [description]
 	 */
@@ -56,12 +70,12 @@ class LiveFileManager implements FileManagerInterface
 	}
 
 	/**
-	 * [get description]
+	 * Returns the path to the file
 	 * @param  string $file The file for which to determine the path
 	 * @return string       [description]
 	 */
 	public function get($file)
 	{
-		return $this->_dir . $file;
+		return $this->_dir . self::LIVE . DIRECTORY_SEPARATOR . $file;
 	}
 }

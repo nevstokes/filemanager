@@ -1,7 +1,7 @@
 <?php
 
 /**
- *
+ * @author Nev Stokes <mail@nevstokes.com>
  */
 
 namespace NevStokes\FileManager;
@@ -20,7 +20,8 @@ use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 class ReleaseScheduler extends Notifier
 {
 	/**
-	 *
+	 * [$_manager description]
+	 * @var ReleaseManager
 	 */
 	protected $_manager;
 
@@ -39,9 +40,9 @@ class ReleaseScheduler extends Notifier
 	public function process()
 	{
 		$dir = $this->_manager->getDirectory();
+		$initial = $this->_manager->getInitialReleaseDirectory();
 		$cutoff = $this->_manager->getBase();
 		$preview = $this->_manager->getPreviewDirectory();
-
 		$releases = $this->_manager->getReleases($preview);
 
 		// only interested in releases prior to the cutoff
@@ -49,6 +50,22 @@ class ReleaseScheduler extends Notifier
 
 		if (iterator_count($filter)) {
 			$fs = new Filesystem();
+
+			/*
+				Need some way of indicating files to delete from live.
+				- zero sized file in release?
+				- filename prefixes?
+				- "sync" and "delete" subdirectories?
+			*/
+
+			if (!is_dir($initial)) {
+				$fs->mirror($dir . ReleaseManager::LIVE, $initial);
+				$message = 'Archiving initial release';
+
+				$this->_setMessage(new LogMessage($message, array(
+					'release' => $release,
+				)));
+			}
 
 			// an iterator seemingly loses its shit if its source dir its moved
 			$traversable = iterator_to_array($filter);
@@ -95,6 +112,10 @@ class ReleaseScheduler extends Notifier
 					$this->_setMessage($message);
 				}
 			}
+
+			return true;
 		}
+
+		return false;
 	}
 }

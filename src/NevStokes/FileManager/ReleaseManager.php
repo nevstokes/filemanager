@@ -1,7 +1,8 @@
 <?php
 
 /**
- *
+ * @author Nev Stokes <mail@nevstokes.com>
+ * @package FileManager
  */
 
 namespace NevStokes\FileManager;
@@ -14,24 +15,21 @@ use Symfony\Component\Finder\Finder;
 class ReleaseManager extends LiveFileManager
 {
 	/**
-	 * The format of a release directory name
-	 */
-	const PATTERN   = 'YmdHi';
-
-	const LIVE      = 'live';
-	const APPLIED   = 'applied';
-	const SCHEDULED = 'scheduled';
-
-	/**
 	 * [$_base description]
-	 * @var [type]
+	 * @var \DateTime
 	 */
 	protected $_base;
 
 	/**
+	 * [$_releases description]
+	 * @var array
+	 */
+	protected $_releases;
+
+	/**
 	 * [__construct description]
-	 * @param [type] $dir  [description]
-	 * @param [type] $base [description]
+	 * @param \DateTime $base [description]
+	 * @param string $dir  The path to releases
 	 */
 	public function __construct(
 		\DateTime $base = null,
@@ -42,8 +40,11 @@ class ReleaseManager extends LiveFileManager
 		// default to now
 		$base = $base ?: new \DateTime;
 
+		// Format the timestamp consistently
 		$this->_base = $base->format(self::PATTERN);
-		$this->_scan = $this->_dir . (($this->_base < date(self::PATTERN)) ?
+
+		// Work out which subdirectory we need to search
+		$this->_scan = (($this->_base < date(self::PATTERN)) ?
 			self::APPLIED : self::SCHEDULED
 		);
 	}
@@ -67,40 +68,51 @@ class ReleaseManager extends LiveFileManager
 	/**
 	 *
 	 */
+	public function getInitialReleaseDirectory()
+	{
+		return $this->_dir . FileManagerInterface::APPLIED . DIRECTORY_SEPARATOR . '000000000000';
+	}
+
+	/**
+	 *
+	 */
 	public function getPreviewDirectory()
 	{
-		return $this->_scan;
+		return $this->_dir . $this->_scan;
 	}
 
 	/**
 	 * [getReleases description]
-	 * @return [type] [description]
+	 * @return array [description]
 	 */
 	public function getReleases($dir = null)
 	{
-		$dir = $dir ?: $this->_dir;
+		if (!isset($this->_releases)) {
+			$dir = $dir ?: $this->_dir;
 
-		$finder = new Finder;
-		$releases = $finder->
-			directories()->
-			in($dir)->
-			depth('< 2')->
-			filter(function(\SplFileInfo $file) {
-				return (preg_match('/^\d{12}$/', $file->getFilename()) > 0);
-		});
+			$finder = new Finder;
+			$this->_releases = $finder->
+				directories()->
+				in($dir)->
+				depth('< 2')->
+				filter(function(\SplFileInfo $file) {
+					return (preg_match('/^\d{12}$/', $file->getFilename()) > 0);
+			});
+		}
 
-		return $releases;
+		return $this->_releases;
 	}
 
 	/**
 	 * [get description]
 	 * @param  string $file [description]
-	 * @return [type]       [description]
+	 * @return string       [description]
 	 */
 	public function get($file)
 	{
 		// normalisation
 		$file = trim($file, '/');
+		$scan = $this->getPreviewDirectory();
 
 		// split the request into file and path components
 		$basename = basename($file);
@@ -108,26 +120,24 @@ class ReleaseManager extends LiveFileManager
 
 		$fileFinder = new Finder;
 
-		// test for preview setting
-		if (isset($this->_base)) {
-			// find all pertinent release directories
-			$finder = new Finder;
-			$releases = $finder->directories()->in($this->_scan);
+		// find all pertinent release directories
+		$finder = new Finder;
+		$releases = $finder->directories()->in($scan);
 
-			// only interested in releases prior to the cutoff
-			$filter = new ReleaseFilterIterator($releases->getIterator(), $this->_base);
+		// only interested in releases prior to the cutoff
+		$filter = new ReleaseFilterIterator($releases->getIterator(), $this->_base);
 
-			// test found releases
-			if (iterator_count($filter)) {
-				// at least one release was found
-				foreach ($filter as $dir) {
-					$fileFinder->in($dir->getRealpath());
-				}
+		// test found releases
+		if (iterator_count($filter)) {
+			// at least one release was found
+			foreach ($filter as $dir) {
+				// add the release to the list of places to search
+				$fileFinder->in($dir->getRealpath());
 			}
 		}
 
 		// don't fallback to live if reviewing historic releases
-		if (!isset($this->_base) || ($this->_base > date(self::PATTERN))) {
+		if (basename($scan) != self::APPLIED) {
 			$fileFinder->in($this->_dir . self::LIVE);
 		}
 
@@ -141,6 +151,6 @@ class ReleaseManager extends LiveFileManager
 		$versions = iterator_to_array($results);
 
 		// return the most recent revision
-		return array_pop($versions);
+		return array_shift($versions);
 	}
 }
